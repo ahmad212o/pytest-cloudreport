@@ -1,8 +1,14 @@
 # pytest-cloudreport
 
 A pytest plugin that uploads your test results to
-[pytest-cloudreport](https://pytest-cloudreport-production.up.railway.app/)
+[pytest-cloudreport](https://pytest-cloudreport.com)
 for analytics, trend tracking, and flaky test detection.
+
+> **About this repo:** This plugin was extracted from the original
+> pytest-cloudreport monorepo in April 2026 and open-sourced under MIT so the
+> community can contribute. It is **mature, PyPI-published, and battle-tested**
+> — the short git history here reflects only the split, not the amount of work
+> behind it. All prior development history lives in the private platform repo.
 
 ## Install
 
