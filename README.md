@@ -3,7 +3,7 @@
 A pytest plugin for test analytics, trend tracking, and flaky test detection.
 
 Two ways to use it: **free local HTML reports** with no account, or
-**[pytest-cloudreport.com](https://pytest-cloudreport.com)** for cloud history,
+**[cloudreport.dev](https://cloudreport.dev)** for cloud history,
 team dashboards, and CI trends.
 
 > **About this repo:** This plugin was extracted from the original
@@ -57,12 +57,12 @@ Sign up once, get persistent history, team dashboards, flaky test detection
 across runs, and CI-provider auto-detection.
 
 **Free during early access** — no card, no limits. See the
-[pricing page](https://pytest-cloudreport.com) for the Free / Team / Business
+[pricing page](https://cloudreport.dev) for the Free / Team / Business
 breakdown once paid plans launch.
 
 ### 5-step quickstart
 
-1. **Sign up** at [pytest-cloudreport.com](https://pytest-cloudreport.com) — a
+1. **Sign up** at [cloudreport.dev](https://cloudreport.dev) — a
    default project is created for you.
 2. **Copy your API key** (shown once when the project is created; starts with
    `pcr_`).
@@ -110,6 +110,12 @@ precedence.
 The plugin sends test names, statuses, durations, assertion messages, and
 tracebacks. It does **not** send source code, test fixtures, environment
 variables, or stdout/stderr captured during the run.
+
+## Support
+
+- Website: **[cloudreport.dev](https://cloudreport.dev)**
+- Email: **[support@cloudreport.dev](mailto:support@cloudreport.dev)**
+- Issues: [github.com/ahmad212o/pytest-cloudreport/issues](https://github.com/ahmad212o/pytest-cloudreport/issues)
 
 ## License
 
