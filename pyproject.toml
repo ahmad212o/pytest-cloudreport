@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pytest-cloudreport"
+version = "0.1.0"
+description = "pytest plugin that uploads test results to pytest-cloudreport for analytics and flaky test detection"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+keywords = ["pytest", "testing", "analytics", "ci", "reporting"]
+classifiers = [
+    "Framework :: Pytest",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Testing",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+    "pytest>=7.0",
+    "jinja2>=3.0",
+]
+
+[project.urls]
+Homepage = "https://pytest-cloudreport.com"
+Documentation = "https://pytest-cloudreport.com/docs"
+Repository = "https://github.com/ahmad212o/pytest-cloudreport"
+"Bug Tracker" = "https://github.com/ahmad212o/pytest-cloudreport/issues"
+
+[project.entry-points."pytest11"]
+cloudreport = "pytest_cloudreport"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pytest_cloudreport*"]
+
+[tool.setuptools.package-data]
+pytest_cloudreport = ["templates/*.html"]

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pytest-cloudreport local report</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e5e7eb; line-height: 1.5; padding: 24px 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  header { margin-bottom: 24px; }
+  h1 { font-size: 1.6rem; font-weight: 600; color: #fff; }
+  .subtitle { color: #9ca3af; font-size: 0.875rem; margin-top: 4px; }
+  .stats { display: grid; gap: 12px; margin-top: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  .stat { background: #1a1d26; border: 1px solid #2a2e3a; border-radius: 8px; padding: 12px 14px; }
+  .stat-label { font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-value { font-size: 1.4rem; font-weight: 600; margin-top: 4px; color: #fff; }
+  .stat-value.ok { color: #22c55e; }
+  .stat-value.warn { color: #eab308; }
+  .stat-value.bad { color: #ef4444; }
+  .card { background: #1a1d26; border: 1px solid #2a2e3a; border-radius: 8px; padding: 20px; margin-top: 20px; }
+  .card h2 { font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #2a2e3a; }
+  th { color: #9ca3af; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  td.mono, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  td.err { color: #fca5a5; font-size: 0.8rem; white-space: pre-wrap; max-width: 500px;
+    overflow-wrap: break-word; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .all-passed { color: #22c55e; font-size: 1.1rem; text-align: center; padding: 20px; }
+  .chart-wrap { position: relative; width: 100%; }
+  @media (max-width: 600px) {
+    h1 { font-size: 1.25rem; }
+    .stat-value { font-size: 1.1rem; }
+    th, td { padding: 6px 4px; font-size: 0.8rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>pytest-cloudreport local report</h1>
+    <div class="subtitle">Generated: {{ generated_at }}
+      {%- if run.branch %} · branch <span class="mono">{{ run.branch }}</span>{% endif -%}
+      {%- if run.commit_sha %} · <span class="mono">{{ run.commit_sha }}</span>{% endif -%}
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Total</div>
+        <div class="stat-value">{{ run.total }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Passed ✓</div>
+        <div class="stat-value ok">{{ run.passed }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Failed ✗</div>
+        <div class="stat-value {% if run.failed %}bad{% endif %}">{{ run.failed }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Skipped</div>
+        <div class="stat-value">{{ run.skipped }}</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Duration</div>
+        <div class="stat-value">{{ run.duration_s }}s</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Pass rate</div>
+        <div class="stat-value {% if run.pass_rate >= 80 %}ok{% elif run.pass_rate >= 50 %}warn{% else %}bad{% endif %}">{{ run.pass_rate }}%</div>
+      </div>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>{% if has_history %}Pass rate trend{% else %}Results{% endif %}</h2>
+    <div class="chart-wrap">
+      <canvas id="mainChart" height="{% if has_history %}120{% else %}80{% endif %}"></canvas>
+    </div>
+  </section>
+
+  {% if has_history %}
+  <section class="card">
+    <h2>Run history</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Branch</th>
+          <th>Total</th>
+          <th>Passed</th>
+          <th>Failed</th>
+          <th>Pass%</th>
+          <th>Duration</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in history %}
+        <tr>
+          <td class="mono">{{ r.created_at[:16] }}</td>
+          <td class="mono">{{ r.branch or "—" }}</td>
+          <td>{{ r.total }}</td>
+          <td>{{ r.passed }}</td>
+          <td>{{ r.failed }}</td>
+          <td>{{ ((r.passed / r.total * 100) | round(1)) if r.total else 0 }}%</td>
+          <td>{{ r.duration_s }}s</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <section class="card">
+    <h2>Failures</h2>
+    {% if run.failed_tests %}
+    <table>
+      <thead>
+        <tr>
+          <th>Test Name</th>
+          <th>Duration</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in run.failed_tests %}
+        <tr>
+          <td class="mono">{{ t.name }}</td>
+          <td>{{ t.duration_ms }}ms</td>
+          <td class="err">{{ t.error_message }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="all-passed">✓ All tests passed</p>
+    {% endif %}
+  </section>
+
+</div>
+<script>
+  {% if has_history %}
+  const labels = [{% for r in history|reverse %}"{{ r.created_at[:16] }}"{% if not loop.last %},{% endif %}{% endfor %}];
+  const data   = [{% for r in history|reverse %}{{ (r.passed / r.total * 100)|round(1) if r.total else 0 }}{% if not loop.last %},{% endif %}{% endfor %}];
+  new Chart(document.getElementById("mainChart"), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Pass rate %",
+        data: data,
+        borderColor: "#22c55e",
+        fill: true,
+        backgroundColor: "rgba(34,197,94,0.1)",
+        tension: 0.3,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { color: "#9ca3af" }, grid: { color: "#2a2e3a" } },
+        x: { ticks: { color: "#9ca3af" }, grid: { color: "#2a2e3a" } }
+      }
+    }
+  });
+  {% else %}
+  new Chart(document.getElementById("mainChart"), {
+    type: "bar",
+    data: {
+      labels: ["Results"],
+      datasets: [
+        { label: "Passed",  data: [{{ run.passed }}],  backgroundColor: "#22c55e" },
+        { label: "Failed",  data: [{{ run.failed }}],  backgroundColor: "#ef4444" },
+        { label: "Skipped", data: [{{ run.skipped }}], backgroundColor: "#6b7280" },
+      ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: "#e5e7eb" } } },
+      scales: {
+        x: { stacked: true, ticks: { color: "#9ca3af" }, grid: { color: "#2a2e3a" } },
+        y: { stacked: true, ticks: { color: "#9ca3af" }, grid: { color: "#2a2e3a" } }
+      }
+    }
+  });
+  {% endif %}
+</script>
+</body>
+</html>
