@@ -23,6 +23,11 @@
   .stat-value.bad { color: #ef4444; }
   .card { background: #1a1d26; border: 1px solid #2a2e3a; border-radius: 8px; padding: 20px; margin-top: 20px; }
   .card h2 { font-size: 1rem; font-weight: 600; color: #fff; margin-bottom: 14px; }
+  .soft-note { background: #141821; border: 1px solid #273041; border-radius: 8px; padding: 14px 16px; margin-top: 18px; }
+  .soft-note h2 { font-size: 0.95rem; margin-bottom: 8px; }
+  .soft-note p { color: #c4cad6; font-size: 0.9rem; }
+  .soft-note a { color: #93c5fd; text-decoration: none; }
+  .soft-note a:hover { text-decoration: underline; }
   table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
   th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #2a2e3a; }
   th { color: #9ca3af; font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -75,6 +80,18 @@
       </div>
     </div>
   </header>
+
+  {% if not cloud_active %}
+  <section class="soft-note">
+    <h2>Want history across machines?</h2>
+    <p>
+      This local report stays on your machine. If you want hosted run history,
+      flaky test tracking over time, and shared project dashboards, you can try
+      the cloud service later without changing how you run pytest.
+      <a href="https://cloudreport.dev" target="_blank" rel="noreferrer">Learn more</a>.
+    </p>
+  </section>
+  {% endif %}
 
   <section class="card">
     <h2>{% if has_history %}Pass rate trend{% else %}Results{% endif %}</h2>

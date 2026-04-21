@@ -211,12 +211,14 @@ def generate_html(run_data: dict, history: list[dict]) -> str:
         pass_rate = round(run_data["passed"] / run_data["total"] * 100, 1)
 
     generated_at = datetime.now().strftime("%b %d %Y %H:%M:%S")
+    cloud_active = bool(os.environ.get("PYTEST_CLOUD_API_KEY"))
 
     return template.render(
         run={**run_data, "pass_rate": pass_rate},
         history=history,
         has_history=bool(history),
         generated_at=generated_at,
+        cloud_active=cloud_active,
     )
 
 

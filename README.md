@@ -22,8 +22,8 @@ pip install pytest-cloudreport
 
 ## Free — Local HTML Reports (no account)
 
-Zero signup, zero network calls. Run your tests and get a self-contained HTML
-report on disk.
+Zero signup required. Run your tests and get a self-contained HTML report on
+disk.
 
 ### One-off report
 
@@ -32,7 +32,8 @@ pytest --cloudreport-local
 ```
 
 Writes `cloudreport.html` in the current directory. Open it in a browser to see
-pass/fail counts, durations, and any failing tests with tracebacks.
+pass/fail counts, durations, and any failing tests with tracebacks. If an API
+key is already configured, the run also uploads to cloudreport.dev.
 
 ### Accumulated history (track trends over time)
 
@@ -56,9 +57,9 @@ Use this if you want:
 Sign up once, get persistent history, team dashboards, flaky test detection
 across runs, and CI-provider auto-detection.
 
-**Free during early access** — no card, no limits. See the
-[pricing page](https://cloudreport.dev) for the Free / Team / Business
-breakdown once paid plans launch.
+**Free during early access** — no card required. Fair-use limits apply:
+**2 projects**, **10,000 tests/month**, and **14 days of history**. Planned paid pricing is
+**Starter at $24/month** and **Pro at $99/month**.
 
 ### 5-step quickstart
 
@@ -95,7 +96,8 @@ precedence.
 ### CLI flags
 
 - `--cloudreport-local` — generate a local HTML report. **No API key
-  required.**
+  required.** If an API key is already configured, the same run also uploads to
+  cloudreport.dev.
 - `--accumulate` — with `--cloudreport-local`, append this run to
   `~/.pytest-cloudreport/history.db` so the HTML report shows trends.
 - `--cloudreport` — force-enable cloud upload even without

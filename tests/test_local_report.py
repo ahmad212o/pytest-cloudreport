@@ -140,6 +140,7 @@ def test_generate_html_no_history():
     assert "Chart.js" in html or "chart.js" in html
     # No history table
     assert "Run history" not in html
+    assert "Want history across machines?" in html
 
 
 def test_generate_html_with_history(tmp_path, monkeypatch):
@@ -170,6 +171,16 @@ def test_generate_html_no_failures():
     html = generate_html(run_data, history=[])
 
     assert "All tests passed" in html
+
+
+def test_generate_html_hides_cloud_cta_when_api_key_present(monkeypatch):
+    plugin = _make_plugin(passed=4, failed=0, skipped=0)
+    run_data = collect_run_data(plugin)
+    monkeypatch.setenv("PYTEST_CLOUD_API_KEY", "pcr_test_key")
+
+    html = generate_html(run_data, history=[])
+
+    assert "Want history across machines?" not in html
 
 
 def test_accumulate_without_local_flag_prints_warning(pytester):
