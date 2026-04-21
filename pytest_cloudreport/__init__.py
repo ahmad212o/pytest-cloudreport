@@ -13,7 +13,7 @@ Configuration (in order of precedence):
 Flags:
   --cloudreport         enable upload (also auto-enabled when API key is set)
   --cloudreport-verbose print upload result / error to stdout
-  --cloudreport-local   generate a local HTML report (no API key required)
+  --cloudreport-local   generate a local HTML report (works with or without cloud upload)
   --accumulate          append run to local history DB (requires --cloudreport-local)
 """
 
@@ -233,6 +233,11 @@ class _CloudReportPlugin:
             )
             return
 
+        if local_mode and self._cloud_active:
+            print(
+                "\npytest-cloudreport: Local report enabled; cloud upload also active because an API key is configured."
+            )
+
         if self._cloud_active:
             # Upload in a background thread with a join timeout so the data
             # actually reaches the server before the process exits.
@@ -365,7 +370,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--cloudreport-local",
         action="store_true",
         default=False,
-        help="Generate a self-contained HTML report after the run. No API key required.",
+        help="Generate a self-contained HTML report after the run. If an API key is configured, cloud upload still runs too.",
     )
     group.addoption(
         "--accumulate",

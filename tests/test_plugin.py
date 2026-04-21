@@ -67,3 +67,34 @@ def test_session_finish_waits_for_upload_thread(mocker):
 
     start_mock.assert_called_once()
     join_mock.assert_called_once_with(timeout=30)
+
+
+def test_session_finish_announces_local_and_cloud_mode(capsys, mocker):
+    plugin = _CloudReportPlugin("key", "https://api.example.com", "ci", False)
+    plugin._results = {
+        "tests/test_sample.py::test_case": {
+            "test_name": "test_case",
+            "nodeid": "tests/test_sample.py::test_case",
+            "file_path": "tests/test_sample.py",
+            "status": "passed",
+            "duration_ms": 10,
+            "error_message": None,
+        }
+    }
+
+    session = MagicMock()
+    session.config.getoption.side_effect = lambda name, default=False: {
+        "--cloudreport-local": True,
+        "--accumulate": False,
+    }.get(name, default)
+
+    mocker.patch("pytest_cloudreport.threading.Thread.start")
+    mocker.patch("pytest_cloudreport.threading.Thread.join")
+    mocker.patch("pytest_cloudreport.local_report.collect_run_data", return_value={"project_path": "/tmp/project"})
+    mocker.patch("pytest_cloudreport.local_report.generate_html", return_value="<html></html>")
+    mocker.patch("pytest_cloudreport.local_report.open_report")
+
+    plugin.pytest_sessionfinish(session, 0)
+
+    out = capsys.readouterr().out
+    assert "Local report enabled; cloud upload also active because an API key is configured." in out
