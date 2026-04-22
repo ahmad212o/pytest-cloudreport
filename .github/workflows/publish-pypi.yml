@@ -63,9 +63,10 @@ jobs:
 
       - name: Publish to PyPI
         if: steps.version_check.outputs.exists == 'false'
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: python -m twine upload dist/*
 
       - name: Skip duplicate version
         if: steps.version_check.outputs.exists == 'true'
