@@ -1,91 +1,105 @@
 # pytest-cloudreport
 
-A pytest plugin for test analytics, trend tracking, and flaky test detection.
+[![PyPI](https://img.shields.io/pypi/v/pytest-cloudreport.svg)](https://pypi.org/project/pytest-cloudreport/)
+[![Python](https://img.shields.io/pypi/pyversions/pytest-cloudreport.svg)](https://pypi.org/project/pytest-cloudreport/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Two ways to use it: **free local HTML reports** with no account, or
-**[cloudreport.dev](https://cloudreport.dev)** for cloud history,
-team dashboards, and CI trends.
-
-> **About this repo:** This plugin was extracted from the original
-> pytest-cloudreport monorepo in April 2026 and open-sourced under MIT so the
-> community can contribute. It is **mature, PyPI-published, and battle-tested**
-> — the short git history here reflects only the split, not the amount of work
-> behind it. All prior development history lives in the private platform repo.
-
-## Install
+**Pass-rate trends, flaky-test detection, and duration tracking for your pytest suite — straight from `pytest`, no CI plugin, no YAML edits.**
 
 ```bash
 pip install pytest-cloudreport
-```
-
----
-
-## Free — Local HTML Reports (no account)
-
-Zero signup required. Run your tests and get a self-contained HTML report on
-disk.
-
-### One-off report
-
-```bash
 pytest --cloudreport-local
 ```
 
-Writes `cloudreport.html` in the current directory. Open it in a browser to see
-pass/fail counts, durations, and any failing tests with tracebacks. If an API
-key is already configured, the run also uploads to cloudreport.dev.
+Opens a self-contained `cloudreport.html` in your browser. No signup. No account. Nothing leaves your machine.
 
-### Accumulated history (track trends over time)
+When you want history to survive across CI runs and developer laptops, point the plugin at **[cloudreport.dev](https://cloudreport.dev)** and every `pytest` invocation uploads automatically.
+
+---
+
+## Why pytest-cloudreport
+
+Every pytest suite past ~50 tests develops the same three problems:
+
+- **Flaky tests that fail once a week.** Impossible to spot from one CI log.
+- **Runs that quietly get slower.** Until CI crawls and nobody knows which tests to blame.
+- **No memory across machines.** Your local run, your coworker's run, and the last CI run all vanish the moment the process exits.
+
+pytest-cloudreport records every run so the patterns show up on their own.
+
+---
+
+## What you get
+
+| | Local (free, no account) | Hosted — [cloudreport.dev](https://cloudreport.dev) |
+| --- | --- | --- |
+| Self-contained HTML report | ✅ | ✅ |
+| Pass / fail / skip counts, durations, tracebacks | ✅ | ✅ |
+| 10-run trend chart | ✅ with `--accumulate` | ✅ |
+| Persistent history across CI + developer machines | — | ✅ |
+| Flaky test detection across runs | — | ✅ |
+| Branch / commit / CI provider auto-tracking | — | ✅ |
+| Team dashboards | — | ✅ |
+| Web UI + JSON API | — | ✅ |
+
+---
+
+## 30-second start
+
+### Local, no account
+
+```bash
+pip install pytest-cloudreport
+pytest --cloudreport-local
+```
+
+Writes `cloudreport.html` and opens it. Everything stays on your machine.
+
+Want trend charts across your last 10 runs?
 
 ```bash
 pytest --cloudreport-local --accumulate
 ```
 
-Appends the run to a local SQLite database at
-`~/.pytest-cloudreport/history.db` and renders a 10-run trend chart in the HTML
-report. Everything stays on your machine.
+Each run is appended to `~/.pytest-cloudreport/history.db`.
 
-Use this if you want:
-- a human-readable report as a CI artifact
-- offline or air-gapped environments
-- a try-before-you-sign-up look at what the plugin produces
+### Hosted — [cloudreport.dev](https://cloudreport.dev)
 
----
+Every new account starts with a **14-day Pro trial**, no card required.
 
-## Cloud — Hosted Dashboard
-
-Sign up once, get persistent history, team dashboards, flaky test detection
-across runs, and CI-provider auto-detection.
-
-**Free during early access** — no card required. Fair-use limits apply:
-**2 projects**, **10,000 tests/month**, and **14 days of history**. Planned paid pricing is
-**Starter at $24/month** and **Pro at $99/month**.
-
-### 5-step quickstart
-
-1. **Sign up** at [cloudreport.dev](https://cloudreport.dev) — a
-   default project is created for you.
-2. **Copy your API key** (shown once when the project is created; starts with
-   `pcr_`).
-3. **Install the plugin** — `pip install pytest-cloudreport`.
-4. **Set the key:**
-   ```bash
+1. Sign up at **[cloudreport.dev](https://cloudreport.dev)** — a default project and API key are created immediately.
+2. ```bash
    export PYTEST_CLOUD_API_KEY=pcr_your_key_here
    ```
-5. **Run your tests:**
-   ```bash
+3. ```bash
    pytest
    ```
 
-Results appear on your dashboard within seconds. No CI plugin install or
-GitHub App required — the plugin posts from wherever `pytest` runs.
+Runs appear on the dashboard within seconds. No CI plugin install. No GitHub App. No YAML edits beyond exporting the key.
+
+---
+
+## CI, out of the box
+
+GitHub Actions, GitLab CI, Jenkins, and CircleCI are auto-detected — branch, commit SHA, and run ID are captured with zero configuration.
+
+```yaml
+- uses: actions/checkout@v4
+- uses: actions/setup-python@v5
+  with: { python-version: "3.12" }
+- run: pip install -r requirements.txt pytest-cloudreport
+- run: pytest
+  env:
+    PYTEST_CLOUD_API_KEY: ${{ secrets.PYTEST_CLOUD_API_KEY }}
+```
+
+The upload runs in a background thread with a 25-second timeout — your build never waits for analytics, and never fails because of them.
 
 ---
 
 ## Configuration
 
-Values can come from environment variables or `pytest.ini`. Environment takes
-precedence.
+Values come from environment variables or `pytest.ini`. Environment wins.
 
 | Env var | `pytest.ini` | Default | What it does |
 | --- | --- | --- | --- |
@@ -95,23 +109,45 @@ precedence.
 
 ### CLI flags
 
-- `--cloudreport-local` — generate a local HTML report. **No API key
-  required.** If an API key is already configured, the same run also uploads to
-  cloudreport.dev.
-- `--accumulate` — with `--cloudreport-local`, append this run to
-  `~/.pytest-cloudreport/history.db` so the HTML report shows trends.
-- `--cloudreport` — force-enable cloud upload even without
-  `PYTEST_CLOUD_API_KEY` set (surfaces a warning so missing keys aren't
-  silent).
-- `--cloudreport-verbose` — print upload result or error to stdout.
+- `--cloudreport-local` — generate a self-contained HTML report. **No API key required.** If a key is also configured, the run uploads to the cloud in the same invocation.
+- `--accumulate` — with `--cloudreport-local`, append the run to the local history DB so the HTML report shows trends.
+- `--cloudreport` — force-enable cloud upload even without `PYTEST_CLOUD_API_KEY` set (warns if the key is missing so failures aren't silent).
+- `--cloudreport-verbose` — print upload status (or error) to stdout.
+
+---
+
+## Pricing
+
+Free during early access. Paid pricing launches with **6 months free for early adopters** on any plan.
+
+| | **Free** | **Starter** | **Pro** |
+| --- | --- | --- | --- |
+| Price | $0 | $24/month | $99/month |
+| Projects | 2 | 10 | Unlimited |
+| Tests per day | 10,000 | 100,000 | 300,000 |
+| History retention | 14 days | 180 days | 1 year |
+| Flaky test detection | ✅ | ✅ | ✅ |
+| CI provider auto-detect | ✅ | ✅ | ✅ |
+| GitHub Action | ✅ | ✅ | ✅ |
+| Team members | 1 | 10 | Unlimited |
+| Priority support | — | ✅ | ✅ |
+
+Setup is identical across all tiers — same plugin, same API key.
 
 ---
 
 ## Privacy
 
-The plugin sends test names, statuses, durations, assertion messages, and
-tracebacks. It does **not** send source code, test fixtures, environment
-variables, or stdout/stderr captured during the run.
+**Sent to the server:** test names, statuses, durations, assertion messages, tracebacks.
+**Never sent:** source code, test fixtures, environment variables, or stdout/stderr captured during the run.
+
+---
+
+## Zero runtime dependencies
+
+The plugin depends only on `pytest` and `jinja2`. No SDK, no telemetry library, no background daemon. Uploads use the Python standard library over plain HTTPS.
+
+---
 
 ## Support
 
