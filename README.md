@@ -65,7 +65,7 @@ Each run is appended to `~/.pytest-cloudreport/history.db`.
 
 ### Hosted — [cloudreport.dev](https://cloudreport.dev)
 
-Every new account starts with a **14-day Pro trial**, no card required.
+Every new account starts on the **Free tier** — no credit card required.
 
 1. Sign up at **[cloudreport.dev](https://cloudreport.dev)** — a default project and API key are created immediately.
 2. ```bash
@@ -124,8 +124,8 @@ Free during early access. Paid pricing launches with **6 months free for early a
 | --- | --- | --- | --- |
 | Price | $0 | $24/month | $99/month |
 | Projects | 2 | 10 | Unlimited |
-| Tests per day | 10,000 | 100,000 | 300,000 |
-| History retention | 14 days | 180 days | 1 year |
+| Tests per month | 10,000 | 500,000 | Unlimited |
+| History retention | 14 days | 1 year | Unlimited |
 | Flaky test detection | ✅ | ✅ | ✅ |
 | CI provider auto-detect | ✅ | ✅ | ✅ |
 | GitHub Action | ✅ | ✅ | ✅ |
