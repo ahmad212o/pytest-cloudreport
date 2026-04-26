@@ -37,9 +37,7 @@ jobs:
       - name: Publish to PyPI
         if: steps.release.outputs.released == 'true'
         run: |
-          pip install build twine
-          rm -rf *.egg-info
-          python -m build
+          pip install twine
           python -m twine upload dist/*
         env:
           TWINE_USERNAME: __token__
