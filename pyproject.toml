@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytest-cloudreport"
-version = "0.2.0"
+version = "0.2.1"
 description = "pytest plugin for test analytics and flaky-test detection. Free local HTML reports out of the box, or upload to cloudreport.dev for cloud history and team dashboards."
 readme = "README.md"
 license = "MIT"

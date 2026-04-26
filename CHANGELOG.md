@@ -1,6 +1,17 @@
 # CHANGELOG
 
 
+## v0.2.1 (2026-04-26)
+
+### Bug Fixes
+
+- Clean egg-info before build, let PSR produce dist artifacts
+  ([`bc5a677`](https://github.com/ahmad212o/pytest-cloudreport/commit/bc5a6773e01033c00175cbcf1c7f0865fb98b3fe))
+
+- Prevent egg-info permission conflict during PSR build
+  ([`b12765d`](https://github.com/ahmad212o/pytest-cloudreport/commit/b12765d3de9f043bd4e6702fa280ca045be79c55))
+
+
 ## v0.2.0 (2026-04-26)
 
 ### Bug Fixes
