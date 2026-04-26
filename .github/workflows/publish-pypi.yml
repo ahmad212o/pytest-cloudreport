@@ -38,6 +38,7 @@ jobs:
         if: steps.release.outputs.released == 'true'
         run: |
           pip install build twine
+          rm -rf *.egg-info
           python -m build
           python -m twine upload dist/*
         env:

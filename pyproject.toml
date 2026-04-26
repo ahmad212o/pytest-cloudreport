@@ -56,7 +56,7 @@ pytest_cloudreport = ["templates/*.html", "py.typed"]
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
 branch = "main"
-build_command = "pip install build && python -m build"
+build_command = "false"
 
 [tool.semantic_release.commit_parser_options]
 allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "style", "test", "build", "ci", "chore"]
