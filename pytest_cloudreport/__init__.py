@@ -1,4 +1,4 @@
-"""pytest-cloudreport: uploads pytest results to pytest-cloudreport for analytics.
+"""pytest-cloudreport: uploads pytest results to Cloud Report for analytics.
 
 Configuration (in order of precedence):
   env PYTEST_CLOUD_API_KEY     — your project API key (required)
@@ -9,6 +9,8 @@ Configuration (in order of precedence):
 
   env PYTEST_CLOUD_ENV         — environment label, default "ci"
   pytest.ini cloudreport_environment
+
+  env CLOUDREPORT_DISABLE=1   — disable the plugin entirely (killswitch)
 
 Flags:
   --cloudreport         enable upload (also auto-enabled when API key is set)
@@ -35,7 +37,8 @@ import pytest
 _PLUGIN_NAME = "cloudreport-collector"
 _DEFAULT_API_URL = "https://pytest-cloudreport-production.up.railway.app"
 _MAX_ERROR_LEN = 2_000  # chars — keep payloads sane
-_UPLOAD_TIMEOUT = 25  # seconds for the HTTP call
+_CONNECT_TIMEOUT = 2    # seconds for TCP connect
+_TOTAL_TIMEOUT = 5      # seconds for connect + read combined
 
 
 # ── CI environment detection ──────────────────────────────────────────────────
@@ -130,12 +133,27 @@ class _CloudReportPlugin:
     # ── pytest hooks ──────────────────────────────────────────────────────────
 
     def pytest_sessionstart(self, session: pytest.Session) -> None:
-        self._session_start = time.monotonic()
+        try:
+            self._session_start = time.monotonic()
+        except BaseException:
+            pass
 
     def pytest_runtest_logreport(self, report: pytest.TestReport) -> None:
+        try:
+            self._handle_logreport(report)
+        except BaseException:
+            pass
+
+    def _handle_logreport(self, report: pytest.TestReport) -> None:
         nodeid = report.nodeid
 
         if report.when == "call":
+            # Skip intermediate retry reports from pytest-rerunfailures.
+            # Intermediate retries have report.rerun > 0; the final outcome
+            # (pass or last failure) has no rerun attribute or rerun == 0.
+            if getattr(report, "rerun", 0):
+                return
+
             if report.passed:
                 status = "passed"
             elif report.failed:
@@ -194,6 +212,12 @@ class _CloudReportPlugin:
                     )
 
     def pytest_sessionfinish(self, session: pytest.Session, exitstatus: object) -> None:
+        try:
+            self._handle_sessionfinish(session, exitstatus)
+        except BaseException:
+            pass
+
+    def _handle_sessionfinish(self, session: pytest.Session, exitstatus: object) -> None:
         with self._lock:
             if not self._results:
                 if self._verbose:
@@ -239,16 +263,15 @@ class _CloudReportPlugin:
             )
 
         if self._cloud_active:
-            # Upload in a background thread with a join timeout so the data
-            # actually reaches the server before the process exits.
-            thread = threading.Thread(target=self._upload, args=(payload,))
+            # Upload in a background thread, then join with a generous timeout
+            # so the process waits for the result but never hangs CI indefinitely.
+            # _TOTAL_TIMEOUT (5 s) bounds the actual network call; 30 s is the
+            # outer safety net for any unexpected delay before the thread starts.
+            thread = threading.Thread(
+                target=self._upload, args=(payload,), daemon=True
+            )
             thread.start()
-            thread.join(timeout=_UPLOAD_TIMEOUT + 5)
-            if thread.is_alive() and self._verbose:
-                print(
-                    "\n[cloudreport] Upload still in progress — detaching.",
-                    file=sys.stderr,
-                )
+            thread.join(timeout=30)
 
         if local_mode:
             try:
@@ -287,6 +310,7 @@ class _CloudReportPlugin:
     # ── Upload ────────────────────────────────────────────────────────────────
 
     def _upload(self, payload: dict) -> None:
+        """HTTP POST to the backend.  Runs in a daemon thread; never raises."""
         try:
             data = json.dumps(payload, default=str).encode("utf-8")
             req = urllib.request.Request(
@@ -298,7 +322,10 @@ class _CloudReportPlugin:
                 },
                 method="POST",
             )
-            with urllib.request.urlopen(req, timeout=_UPLOAD_TIMEOUT) as resp:
+            # _TOTAL_TIMEOUT covers both TCP connect and read phases.
+            # A Railway/infra hiccup that hangs the socket will be aborted
+            # after this many seconds so CI never blocks indefinitely.
+            with urllib.request.urlopen(req, timeout=_TOTAL_TIMEOUT) as resp:
                 body: dict = json.loads(resp.read())
             if self._verbose:
                 status = body.get("status", "ok")
@@ -387,7 +414,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     parser.addini(
         "cloudreport_api_url",
         default="",
-        help="Override backend URL (default: https://api.pytest-cloudreport.com).",
+        help="Override backend URL (default: https://api.cloudreport.dev).",
     )
     parser.addini(
         "cloudreport_environment",
@@ -397,6 +424,23 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    try:
+        _configure(config)
+    except BaseException:
+        pass
+
+
+def _configure(config: pytest.Config) -> None:
+    # Hard killswitch — security-conscious teams can disable the plugin entirely
+    # without removing it from their dependencies.
+    if os.environ.get("CLOUDREPORT_DISABLE", "").strip() in ("1", "true", "yes"):
+        return
+
+    # pytest-xdist: only upload from the controller process, not from workers.
+    # Workers set PYTEST_XDIST_WORKER to their worker ID (e.g. "gw0").
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        return
+
     # Resolve API key (env > ini)
     api_key: str = (
         os.environ.get("PYTEST_CLOUD_API_KEY", "").strip()
@@ -461,13 +505,16 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: object) -> None:
     no plugin instance handled it. If the plugin is registered, its own
     sessionfinish method handles everything.
     """
-    if session.config.pluginmanager.get_plugin(_PLUGIN_NAME) is not None:
-        return
+    try:
+        if session.config.pluginmanager.get_plugin(_PLUGIN_NAME) is not None:
+            return
 
-    local_mode = bool(session.config.getoption("--cloudreport-local", default=False))
-    accumulate = bool(session.config.getoption("--accumulate", default=False))
+        local_mode = bool(session.config.getoption("--cloudreport-local", default=False))
+        accumulate = bool(session.config.getoption("--accumulate", default=False))
 
-    if accumulate and not local_mode:
-        print(
-            "\npytest-cloudreport: --accumulate requires --cloudreport-local. Ignoring."
-        )
+        if accumulate and not local_mode:
+            print(
+                "\npytest-cloudreport: --accumulate requires --cloudreport-local. Ignoring."
+            )
+    except BaseException:
+        pass

@@ -7,18 +7,29 @@ name = "pytest-cloudreport"
 version = "0.1.2"
 description = "pytest plugin for test analytics and flaky-test detection. Free local HTML reports out of the box, or upload to cloudreport.dev for cloud history and team dashboards."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 requires-python = ">=3.9"
-keywords = ["pytest", "testing", "analytics", "ci", "reporting"]
+keywords = ["pytest", "testing", "analytics", "ci", "reporting", "flaky-tests", "test-results"]
+authors = [
+    { name = "Cloud Report", email = "hello@cloudreport.dev" },
+]
+maintainers = [
+    { name = "Cloud Report", email = "hello@cloudreport.dev" },
+]
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Framework :: Pytest",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Software Development :: Testing",
-    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Quality Assurance",
+    "Typing :: Typed",
 ]
 dependencies = [
     "pytest>=7.0",
@@ -30,6 +41,7 @@ Homepage = "https://cloudreport.dev"
 Documentation = "https://cloudreport.dev/docs"
 Repository = "https://github.com/ahmad212o/pytest-cloudreport"
 "Bug Tracker" = "https://github.com/ahmad212o/pytest-cloudreport/issues"
+Changelog = "https://github.com/ahmad212o/pytest-cloudreport/releases"
 
 [project.entry-points."pytest11"]
 cloudreport = "pytest_cloudreport"
@@ -39,4 +51,14 @@ where = ["."]
 include = ["pytest_cloudreport*"]
 
 [tool.setuptools.package-data]
-pytest_cloudreport = ["templates/*.html"]
+pytest_cloudreport = ["templates/*.html", "py.typed"]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:project.version"]
+branch = "main"
+build_command = "pip install build && python -m build"
+
+[tool.semantic_release.commit_parser_options]
+allowed_tags = ["feat", "fix", "perf", "refactor", "docs", "style", "test", "build", "ci", "chore"]
+minor_tags = ["feat"]
+patch_tags = ["fix", "perf", "refactor"]

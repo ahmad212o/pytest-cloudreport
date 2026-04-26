@@ -1,75 +1,45 @@
-name: Publish to PyPI
+name: Release
 
 on:
   push:
     branches:
       - main
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install build tooling
-        run: python -m pip install --upgrade build twine
-
-      - name: Check whether version already exists on PyPI
-        id: version_check
-        run: |
-          python - <<'PY'
-          import pathlib
-          import tomllib
-          import urllib.error
-          import urllib.request
-
-          data = tomllib.loads(pathlib.Path("pyproject.toml").read_text())
-          name = data["project"]["name"]
-          version = data["project"]["version"]
-          url = f"https://pypi.org/pypi/{name}/{version}/json"
-
-          try:
-              with urllib.request.urlopen(url) as response:
-                  exists = response.status == 200
-          except urllib.error.HTTPError as exc:
-              if exc.code == 404:
-                  exists = False
-              else:
-                  raise
-
-          import os
-          output_path = pathlib.Path(os.environ["GITHUB_OUTPUT"])
-          with output_path.open("a", encoding="utf-8") as fh:
-              fh.write(f"exists={'true' if exists else 'false'}\n")
-              fh.write(f"name={name}\n")
-              fh.write(f"version={version}\n")
-          PY
-
-      - name: Build distributions
-        if: steps.version_check.outputs.exists == 'false'
-        run: python -m build
-
-      - name: Check distributions
-        if: steps.version_check.outputs.exists == 'false'
-        run: python -m twine check dist/*
+      - name: Python Semantic Release
+        id: release
+        uses: python-semantic-release/python-semantic-release@v9
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to PyPI
-        if: steps.version_check.outputs.exists == 'false'
+        if: steps.release.outputs.released == 'true'
+        run: |
+          pip install build twine
+          python -m build
+          python -m twine upload dist/*
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: python -m twine upload dist/*
-
-      - name: Skip duplicate version
-        if: steps.version_check.outputs.exists == 'true'
-        run: |
-          echo "PyPI already has ${{ steps.version_check.outputs.name }} ${{ steps.version_check.outputs.version }}. Skipping publish."

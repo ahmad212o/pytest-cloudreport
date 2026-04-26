@@ -19,6 +19,7 @@ def _make_report(
     report.longrepr = longrepr
     report.nodeid = "tests/test_sample.py::test_case"
     report.duration = 0.01
+    report.rerun = 0  # prevent MagicMock truthiness from tripping the retry-skip guard
     return report
 
 
