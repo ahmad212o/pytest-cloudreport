@@ -123,9 +123,9 @@ Free during early access. Paid pricing launches with **6 months free for early a
 | | **Free** | **Starter** | **Pro** |
 | --- | --- | --- | --- |
 | Price | $0 | $24/month | $99/month |
-| Projects | 2 | 10 | Unlimited |
-| Tests per month | 10,000 | 500,000 | Unlimited |
-| History retention | 14 days | 1 year | Unlimited |
+| Projects | 1 | 10 | Unlimited |
+| Tests per day | 5,000 | 100,000 | 300,000 |
+| History retention | 7 days | 6 months | 1 year |
 | Flaky test detection | ✅ | ✅ | ✅ |
 | CI provider auto-detect | ✅ | ✅ | ✅ |
 | GitHub Action | ✅ | ✅ | ✅ |
