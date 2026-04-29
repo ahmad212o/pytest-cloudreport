@@ -35,7 +35,7 @@ from typing import Optional
 import pytest
 
 _PLUGIN_NAME = "cloudreport-collector"
-_DEFAULT_API_URL = "https://pytest-cloudreport-production.up.railway.app"
+_DEFAULT_API_URL = "https://www.cloudreport.dev"
 _MAX_ERROR_LEN = 2_000  # chars — keep payloads sane
 _CONNECT_TIMEOUT = 2    # seconds for TCP connect
 _TOTAL_TIMEOUT = 5      # seconds for connect + read combined
@@ -319,6 +319,7 @@ class _CloudReportPlugin:
                 headers={
                     "Content-Type": "application/json",
                     "X-API-Key": self._api_key,
+                    "User-Agent": "pytest-cloudreport/0.1.2",
                 },
                 method="POST",
             )
