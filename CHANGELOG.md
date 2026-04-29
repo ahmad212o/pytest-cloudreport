@@ -1,6 +1,18 @@
 # CHANGELOG
 
 
+## v0.2.2 (2026-04-29)
+
+### Bug Fixes
+
+- Set support@cloudreport.dev as author email in pyproject.toml
+  ([`bb79148`](https://github.com/ahmad212o/pytest-cloudreport/commit/bb791483126d5f5c438c9615b3c83a7fe8ef9299))
+
+- Update default API URL to cloudreport.dev and add User-Agent header to bypass Cloudflare bot
+  protection
+  ([`de74bb5`](https://github.com/ahmad212o/pytest-cloudreport/commit/de74bb595a3f9ab96e0e60532514de67bd6d0f02))
+
+
 ## v0.2.1 (2026-04-26)
 
 ### Bug Fixes
