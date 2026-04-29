@@ -11,10 +11,10 @@ license = "MIT"
 requires-python = ">=3.9"
 keywords = ["pytest", "testing", "analytics", "ci", "reporting", "flaky-tests", "test-results"]
 authors = [
-    { name = "Cloud Report", email = "hello@cloudreport.dev" },
+    { name = "Cloud Report", email = "support@cloudreport.dev" },
 ]
 maintainers = [
-    { name = "Cloud Report", email = "hello@cloudreport.dev" },
+    { name = "Cloud Report", email = "support@cloudreport.dev" },
 ]
 classifiers = [
     "Development Status :: 4 - Beta",

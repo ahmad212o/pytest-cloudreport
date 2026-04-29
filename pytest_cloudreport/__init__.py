@@ -319,7 +319,7 @@ class _CloudReportPlugin:
                 headers={
                     "Content-Type": "application/json",
                     "X-API-Key": self._api_key,
-                    "User-Agent": "pytest-cloudreport/0.1.2",
+                    "User-Agent": "pytest-cloudreport/0.2.1",
                 },
                 method="POST",
             )
