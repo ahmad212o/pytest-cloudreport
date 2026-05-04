@@ -1,6 +1,19 @@
 # CHANGELOG
 
 
+## v0.3.0 (2026-05-04)
+
+### Chores
+
+- Add CLAUDE.md with repo guidelines
+  ([`7d6fc6e`](https://github.com/ahmad212o/pytest-cloudreport/commit/7d6fc6e533689aefdcce7e598f7f7c2ebe725b82))
+
+### Features
+
+- Extract exception_type and stack_trace from pytest longrepr
+  ([`5640f4e`](https://github.com/ahmad212o/pytest-cloudreport/commit/5640f4ec29fa905783c73bda959cd8012c9c340d))
+
+
 ## v0.2.2 (2026-04-29)
 
 ### Bug Fixes
