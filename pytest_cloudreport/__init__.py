@@ -37,6 +37,7 @@ import pytest
 _PLUGIN_NAME = "cloudreport-collector"
 _DEFAULT_API_URL = "https://www.cloudreport.dev"
 _MAX_ERROR_LEN = 2_000  # chars — keep payloads sane
+_MAX_STACK_LEN = 4_000  # stack traces can be longer
 _CONNECT_TIMEOUT = 2    # seconds for TCP connect
 _TOTAL_TIMEOUT = 5      # seconds for connect + read combined
 
@@ -163,8 +164,12 @@ class _CloudReportPlugin:
                 status = "skipped"
 
             error_msg: Optional[str] = None
+            exception_type: Optional[str] = None
+            stack_trace: Optional[str] = None
             if report.failed and not hasattr(report, "wasxfail") and report.longrepr:
                 error_msg = str(report.longrepr)[:_MAX_ERROR_LEN]
+                exception_type = _extract_exception_type(report.longrepr)
+                stack_trace = _extract_stack_trace(report.longrepr)
 
             with self._lock:
                 self._results[nodeid] = {
@@ -174,6 +179,8 @@ class _CloudReportPlugin:
                     "status": status,
                     "duration_ms": _ms(report.duration),
                     "error_message": error_msg,
+                    "exception_type": exception_type,
+                    "stack_trace": stack_trace,
                 }
 
         elif report.when == "setup":
@@ -186,8 +193,11 @@ class _CloudReportPlugin:
                         "status": "skipped",
                         "duration_ms": None,
                         "error_message": None,
+                        "exception_type": None,
+                        "stack_trace": None,
                     }
             elif report.failed:
+                longrepr = report.longrepr
                 with self._lock:
                     self._results[nodeid] = {
                         "test_name": _test_name_from_nodeid(nodeid),
@@ -195,20 +205,25 @@ class _CloudReportPlugin:
                         "file_path": _file_path_from_nodeid(nodeid),
                         "status": "error",
                         "duration_ms": None,
-                        "error_message": str(report.longrepr)[:_MAX_ERROR_LEN]
-                        if report.longrepr
-                        else None,
+                        "error_message": str(longrepr)[:_MAX_ERROR_LEN] if longrepr else None,
+                        "exception_type": _extract_exception_type(longrepr) if longrepr else None,
+                        "stack_trace": _extract_stack_trace(longrepr) if longrepr else None,
                     }
 
         elif report.when == "teardown" and report.failed:
+            longrepr = report.longrepr
             with self._lock:
                 existing = self._results.get(nodeid)
                 if existing:
                     existing["status"] = "error"
                     existing["error_message"] = (
-                        str(report.longrepr)[:_MAX_ERROR_LEN]
-                        if report.longrepr
-                        else None
+                        str(longrepr)[:_MAX_ERROR_LEN] if longrepr else None
+                    )
+                    existing["exception_type"] = (
+                        _extract_exception_type(longrepr) if longrepr else None
+                    )
+                    existing["stack_trace"] = (
+                        _extract_stack_trace(longrepr) if longrepr else None
                     )
 
     def pytest_sessionfinish(self, session: pytest.Session, exitstatus: object) -> None:
@@ -362,6 +377,47 @@ class _CloudReportPlugin:
 def _ms(duration: Optional[float]) -> Optional[int]:
     """Convert float seconds → integer milliseconds."""
     return int(duration * 1000) if duration is not None else None
+
+
+def _extract_exception_type(longrepr) -> Optional[str]:
+    """Return the bare exception class name from a pytest longrepr.
+
+    Tries reprcrash.message first ("AssertionError: ..." → "AssertionError"),
+    then falls back to the last non-empty line of the string representation.
+    Returns None if nothing looks like an exception class.
+    """
+    try:
+        if hasattr(longrepr, "reprcrash") and longrepr.reprcrash:
+            msg = str(longrepr.reprcrash.message or "").strip()
+            if msg:
+                exc = msg.split(":")[0].strip()
+                # Must look like a class name (no spaces, starts with uppercase or underscore)
+                if exc and " " not in exc:
+                    return exc
+    except Exception:
+        pass
+    try:
+        # Last non-empty line is typically "ExcType: message"
+        for line in reversed(str(longrepr).splitlines()):
+            line = line.strip()
+            if line and not line.startswith(("E ", "_ ", "F ", ">")):
+                candidate = line.split(":")[0].strip()
+                if candidate and " " not in candidate and candidate[0].isupper():
+                    return candidate
+                break
+    except Exception:
+        pass
+    return None
+
+
+def _extract_stack_trace(longrepr) -> Optional[str]:
+    """Return the full string representation of the traceback, length-capped."""
+    try:
+        if hasattr(longrepr, "reprtraceback"):
+            return str(longrepr.reprtraceback)[:_MAX_STACK_LEN]
+        return str(longrepr)[:_MAX_STACK_LEN]
+    except Exception:
+        return None
 
 
 def _file_path_from_nodeid(nodeid: str) -> Optional[str]:

@@ -6,6 +6,7 @@ No network, no API key, no external dependencies beyond stdlib + jinja2.
 """
 from __future__ import annotations
 
+import json
 import os
 import sqlite3
 import subprocess
